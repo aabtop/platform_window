@@ -1,0 +1,3 @@
+# Ignore all Bazel build output directories
+bazel-*
+.vscode

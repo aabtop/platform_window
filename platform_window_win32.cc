@@ -1,11 +1,12 @@
-#include "platform_window/platform_window.h"
+#include <windows.h>
 
 #include <cassert>
 #include <condition_variable>
+#include <iostream>
 #include <mutex>
 #include <thread>
-#include <windows.h>
-#include <iostream>
+
+#include "platform_window/platform_window.h"
 
 namespace {
 const int kWindowWidth = 1920;
@@ -51,9 +52,9 @@ class Window {
 
 thread_local Window* s_window = nullptr;
 
-long __stdcall HandleWindowEvent(
-    HWND window, unsigned int msg, WPARAM wp, LPARAM lp) {
-  switch(msg) {
+long __stdcall HandleWindowEvent(HWND window, unsigned int msg, WPARAM wp,
+                                 LPARAM lp) {
+  switch (msg) {
     case WM_CLOSE: {
       s_window->OnQuitRequest();
       return 0L;
@@ -94,28 +95,27 @@ void Window::Run(const char* title) {
     return;
   }
 
-  while (PumpNextWindowEvent()) {}
+  while (PumpNextWindowEvent()) {
+  }
 
   Shutdown();
 }
 
 namespace {
 const char* const CreateWindowClass() {
-  const char* const myclass = "myclass" ;
-  WNDCLASSEX wndclass = {
-      sizeof(WNDCLASSEX),
-      CS_DBLCLKS,
-      HandleWindowEvent,
-      0,
-      0,
-      GetModuleHandle(0),
-      LoadIcon(0, IDI_APPLICATION),
-      LoadCursor(0, IDC_ARROW),
-      HBRUSH(COLOR_WINDOW + 1),
-      0,
-      myclass,
-      LoadIcon(0,IDI_APPLICATION)
-  };
+  const char* const myclass = "myclass";
+  WNDCLASSEX wndclass = {sizeof(WNDCLASSEX),
+                         CS_DBLCLKS,
+                         (WNDPROC)HandleWindowEvent,
+                         0,
+                         0,
+                         GetModuleHandle(0),
+                         LoadIcon(0, IDI_APPLICATION),
+                         LoadCursor(0, IDC_ARROW),
+                         HBRUSH(COLOR_WINDOW + 1),
+                         0,
+                         myclass,
+                         LoadIcon(0, IDI_APPLICATION)};
 
   ATOM registered_class = RegisterClassEx(&wndclass);
   assert(registered_class);
@@ -131,10 +131,9 @@ void Window::Start(const char* title) {
 
   DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
-  hwnd_ = CreateWindowEx(
-      0, window_class, title, style, CW_USEDEFAULT,
-      CW_USEDEFAULT, kWindowWidth, kWindowHeight, 0, 0, GetModuleHandle(0),
-      NULL);
+  hwnd_ = CreateWindowEx(0, window_class, title, style, CW_USEDEFAULT,
+                         CW_USEDEFAULT, kWindowWidth, kWindowHeight, 0, 0,
+                         GetModuleHandle(0), NULL);
 
   if (hwnd_ != NULL) {
     ShowWindow(hwnd_, SW_SHOWDEFAULT);
@@ -145,16 +144,13 @@ void Window::Start(const char* title) {
   initialized_condition_.notify_all();
 }
 
-void Window::Shutdown() {
-  DestroyWindow(hwnd_);
-}
+void Window::Shutdown() { DestroyWindow(hwnd_); }
 
 void Window::OnQuitRequest() {
   event_callback_(context_, kPlatformWindowEventQuitRequest, 0);
 }
 
 }  // namespace
-
 
 PlatformWindow PlatformWindowMakeDefaultWindow(
     const char* title, PlatformWindowEventCallback event_callback,
@@ -177,10 +173,6 @@ NativeWindow PlatformWindowGetNativeWindow(PlatformWindow platform_window) {
       static_cast<Window*>(platform_window)->hwnd());
 }
 
-int32_t PlatformWindowGetWidth(PlatformWindow window) {
-  return kWindowWidth;
-}
+int32_t PlatformWindowGetWidth(PlatformWindow window) { return kWindowWidth; }
 
-int32_t PlatformWindowGetHeight(PlatformWindow window) {
-  return kWindowHeight;
-}
+int32_t PlatformWindowGetHeight(PlatformWindow window) { return kWindowHeight; }
