@@ -10,23 +10,37 @@ extern "C" {
 typedef void* PlatformWindow;
 typedef void* NativeWindow;
 
-enum PlatformWindowEvent {
-  kPlatformWindowEventQuitRequest,
+enum PlatformWindowEventType {
+  kPlatformWindowEventTypeNoEvent,
+  kPlatformWindowEventTypeQuitRequest,
+  kPlatformWindowEventTypeResized,
 };
 
-typedef void (*PlatformWindowEventCallback)(
-    void*,                // Context data passed in by the caller.
-    PlatformWindowEvent,  // The type of newly fired event.
-    void*                 // Event data.
-);
+union PlatformWindowEventData {
+  struct {
+  } QuitRequest;
+  struct {
+    int width;
+    int height;
+  } Resized;
+};
+
+struct PlatformWindowEvent {
+  PlatformWindowEventType type;
+  PlatformWindowEventData data;
+};
 
 // The |event_callback| may be called from an arbitrary thread.
-PlatformWindow PlatformWindowMakeDefaultWindow(
-    const char* title, PlatformWindowEventCallback event_callback,
-    void* context);
+PlatformWindow PlatformWindowMakeDefaultWindow(const char* title);
 void PlatformWindowDestroyWindow(PlatformWindow platform_window);
 
 NativeWindow PlatformWindowGetNativeWindow(PlatformWindow platform_window);
+
+void PlatformWindowShow(PlatformWindow platform_window);
+void PlatformWindowHide(PlatformWindow platform_window);
+
+PlatformWindowEvent PlatformWindowWaitForNextEvent(
+    PlatformWindow platform_window);
 
 int32_t PlatformWindowGetWidth(PlatformWindow window);
 int32_t PlatformWindowGetHeight(PlatformWindow window);

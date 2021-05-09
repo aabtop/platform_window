@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
+#include <queue>
 #include <thread>
 
 #include "platform_window/platform_window.h"
@@ -14,38 +15,23 @@ const int kWindowHeight = 1080;
 
 class Window {
  public:
-  Window(const char* title, PlatformWindowEventCallback event_callback,
-         void* event_callback_context);
+  Window(const char* title);
   ~Window();
 
   bool error() { return hwnd() == NULL; }
-  HWND hwnd() {
-    {
-      std::unique_lock<std::mutex> lock(initialized_mutex_);
-      while (!initialized_) {
-        initialized_condition_.wait(lock);
-      }
-    }
+  HWND hwnd() { return hwnd_; }
 
-    return hwnd_;
-  }
+  void Show() { ShowWindow(hwnd_, SW_SHOWDEFAULT); }
+  void Hide() { ShowWindow(hwnd_, SW_HIDE); }
+
+  PlatformWindowEvent WaitForNextEvent();
 
  private:
-  void Run(const char* title);
-  void Start(const char* title);
-  void Shutdown();
-
-  void OnQuitRequest();
-
-  bool initialized_ = false;
-  PlatformWindowEventCallback event_callback_;
-  void* context_;
-
-  std::mutex initialized_mutex_;
-  std::condition_variable initialized_condition_;
-  std::thread thread_;
+  void OnEvent(const PlatformWindowEvent& event);
 
   HWND hwnd_ = NULL;
+
+  std::queue<PlatformWindowEvent> event_queue_;
 
   friend long __stdcall HandleWindowEvent(HWND, unsigned int, WPARAM, LPARAM);
 };
@@ -56,7 +42,7 @@ long __stdcall HandleWindowEvent(HWND window, unsigned int msg, WPARAM wp,
                                  LPARAM lp) {
   switch (msg) {
     case WM_CLOSE: {
-      s_window->OnQuitRequest();
+      s_window->OnEvent({kPlatformWindowEventTypeQuitRequest, {}});
       return 0L;
     } break;
     default: {
@@ -65,40 +51,20 @@ long __stdcall HandleWindowEvent(HWND window, unsigned int msg, WPARAM wp,
   }
 }
 
-bool PumpNextWindowEvent() {
+PlatformWindowEvent Window::WaitForNextEvent() {
   MSG msg;
   if (!GetMessage(&msg, 0, 0, 0)) {
-    return false;
+    return {kPlatformWindowEventTypeQuitRequest, {}};
   } else {
     DispatchMessage(&msg);
-    return true;
+    if (!event_queue_.empty()) {
+      PlatformWindowEvent result = event_queue_.front();
+      event_queue_.pop();
+      return result;
+    } else {
+      return {kPlatformWindowEventTypeNoEvent, {}};
+    }
   }
-}
-
-Window::Window(const char* title, PlatformWindowEventCallback event_callback,
-               void* event_callback_context)
-    : event_callback_(event_callback),
-      context_(event_callback_context),
-      thread_(&Window::Run, this, title) {}
-
-Window::~Window() {
-  if (!error()) {
-    PostMessageA(hwnd(), WM_QUIT, 0, 0);
-  }
-
-  thread_.join();
-}
-
-void Window::Run(const char* title) {
-  Start(title);
-  if (hwnd_ == NULL) {
-    return;
-  }
-
-  while (PumpNextWindowEvent()) {
-  }
-
-  Shutdown();
 }
 
 namespace {
@@ -124,7 +90,7 @@ const char* const CreateWindowClass() {
 }
 }  // namespace
 
-void Window::Start(const char* title) {
+Window::Window(const char* title) {
   static auto window_class = CreateWindowClass();
 
   s_window = this;
@@ -134,28 +100,23 @@ void Window::Start(const char* title) {
   hwnd_ = CreateWindowEx(0, window_class, title, style, CW_USEDEFAULT,
                          CW_USEDEFAULT, kWindowWidth, kWindowHeight, 0, 0,
                          GetModuleHandle(0), NULL);
-
-  if (hwnd_ != NULL) {
-    ShowWindow(hwnd_, SW_SHOWDEFAULT);
-  }
-
-  std::lock_guard<std::mutex> lock(initialized_mutex_);
-  initialized_ = true;
-  initialized_condition_.notify_all();
 }
 
-void Window::Shutdown() { DestroyWindow(hwnd_); }
+Window::~Window() {
+  if (!error()) {
+    PostMessageA(hwnd(), WM_QUIT, 0, 0);
+    DestroyWindow(hwnd_);
+  }
+}
 
-void Window::OnQuitRequest() {
-  event_callback_(context_, kPlatformWindowEventQuitRequest, 0);
+void Window::OnEvent(const PlatformWindowEvent& event) {
+  event_queue_.push(event);
 }
 
 }  // namespace
 
-PlatformWindow PlatformWindowMakeDefaultWindow(
-    const char* title, PlatformWindowEventCallback event_callback,
-    void* context) {
-  auto window = std::make_unique<Window>(title, event_callback, context);
+PlatformWindow PlatformWindowMakeDefaultWindow(const char* title) {
+  auto window = std::make_unique<Window>(title);
   if (window->error()) {
     return NULL;
   } else {
@@ -171,6 +132,19 @@ void PlatformWindowDestroyWindow(PlatformWindow platform_window) {
 NativeWindow PlatformWindowGetNativeWindow(PlatformWindow platform_window) {
   return static_cast<NativeWindow>(
       static_cast<Window*>(platform_window)->hwnd());
+}
+
+void PlatformWindowShow(PlatformWindow platform_window) {
+  static_cast<Window*>(platform_window)->Show();
+}
+
+void PlatformWindowHide(PlatformWindow platform_window) {
+  static_cast<Window*>(platform_window)->Hide();
+}
+
+PlatformWindowEvent PlatformWindowWaitForNextEvent(
+    PlatformWindow platform_window) {
+  return static_cast<Window*>(platform_window)->WaitForNextEvent();
 }
 
 int32_t PlatformWindowGetWidth(PlatformWindow window) { return kWindowWidth; }
