@@ -14,15 +14,26 @@ enum PlatformWindowEventType {
   kPlatformWindowEventTypeNoEvent,
   kPlatformWindowEventTypeQuitRequest,
   kPlatformWindowEventTypeResized,
+  kPlatformWindowEventTypeCustom,
+};
+
+struct PlatformWindowEventDataCustom {
+  // If your payload can fit into an integer, it can make things simpler
+  // to just stuff it into this `small_data` field.
+  int small_data;
+  // Otherwise, the `more_data` field can be used to specify arbitrarily
+  // more information (at the cost of more involved data lifetime management).
+  void* more_data;
 };
 
 union PlatformWindowEventData {
   struct {
-  } QuitRequest;
+  } quit_request;
   struct {
     int width;
     int height;
-  } Resized;
+  } resized;
+  PlatformWindowEventDataCustom custom;
 };
 
 struct PlatformWindowEvent {
@@ -41,6 +52,10 @@ void PlatformWindowHide(PlatformWindow platform_window);
 
 PlatformWindowEvent PlatformWindowWaitForNextEvent(
     PlatformWindow platform_window);
+
+// Injects a custom message that can be used to wake up the event loop.
+bool PlatformWindowEnqueueCustomEvent(PlatformWindow platform_window,
+                                      PlatformWindowEventDataCustom data);
 
 int32_t PlatformWindowGetWidth(PlatformWindow window);
 int32_t PlatformWindowGetHeight(PlatformWindow window);

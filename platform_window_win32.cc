@@ -25,6 +25,7 @@ class Window {
   void Hide() { ShowWindow(hwnd_, SW_HIDE); }
 
   PlatformWindowEvent WaitForNextEvent();
+  bool EnqueueCustomEvent(PlatformWindowEventDataCustom data);
 
  private:
   void OnEvent(const PlatformWindowEvent& event);
@@ -45,6 +46,12 @@ long __stdcall HandleWindowEvent(HWND window, unsigned int msg, WPARAM wp,
       s_window->OnEvent({kPlatformWindowEventTypeQuitRequest, {}});
       return 0L;
     } break;
+    case WM_USER: {
+      PlatformWindowEventData data;
+      data.custom = {static_cast<int>(lp), reinterpret_cast<void*>(lp)};
+      s_window->OnEvent({kPlatformWindowEventTypeCustom, data});
+      return 0L;
+    } break;
     default: {
       return DefWindowProc(window, msg, wp, lp);
     }
@@ -56,15 +63,26 @@ PlatformWindowEvent Window::WaitForNextEvent() {
   if (!GetMessage(&msg, 0, 0, 0)) {
     return {kPlatformWindowEventTypeQuitRequest, {}};
   } else {
-    DispatchMessage(&msg);
-    if (!event_queue_.empty()) {
-      PlatformWindowEvent result = event_queue_.front();
-      event_queue_.pop();
-      return result;
-    } else {
-      return {kPlatformWindowEventTypeNoEvent, {}};
-    }
+    do {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    } while (PeekMessageA(&msg, hwnd_, 0, 0, PM_REMOVE));
   }
+
+  if (!event_queue_.empty()) {
+    PlatformWindowEvent result = event_queue_.front();
+    event_queue_.pop();
+    return result;
+  } else {
+    return {kPlatformWindowEventTypeNoEvent, {}};
+  }
+}
+
+bool Window::EnqueueCustomEvent(PlatformWindowEventDataCustom data) {
+  BOOL result =
+      PostMessageA(hwnd_, WM_USER, reinterpret_cast<WPARAM>(data.more_data),
+                   static_cast<LPARAM>(data.small_data));
+  return result;
 }
 
 namespace {
@@ -150,3 +168,8 @@ PlatformWindowEvent PlatformWindowWaitForNextEvent(
 int32_t PlatformWindowGetWidth(PlatformWindow window) { return kWindowWidth; }
 
 int32_t PlatformWindowGetHeight(PlatformWindow window) { return kWindowHeight; }
+
+bool PlatformWindowEnqueueCustomEvent(PlatformWindow platform_window,
+                                      PlatformWindowEventDataCustom data) {
+  return static_cast<Window*>(platform_window)->EnqueueCustomEvent(data);
+}
