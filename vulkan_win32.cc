@@ -18,8 +18,8 @@ const std::vector<const char*>* GetRequiredInstanceExtensions() {
 }
 }  // namespace
 
-int32_t PlatformWindowVulkanGetRequiredInstanceExtensionsCount() {
-  return static_cast<int32_t>(GetRequiredInstanceExtensions()->size());
+size_t PlatformWindowVulkanGetRequiredInstanceExtensionsCount() {
+  return GetRequiredInstanceExtensions()->size();
 }
 
 const char** PlatformWindowVulkanGetRequiredInstanceExtensions() {

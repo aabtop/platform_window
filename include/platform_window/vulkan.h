@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-int32_t PlatformWindowVulkanGetRequiredInstanceExtensionsCount();
+size_t PlatformWindowVulkanGetRequiredInstanceExtensionsCount();
 const char** PlatformWindowVulkanGetRequiredInstanceExtensions();
 VkResult PlatformWindowVulkanCreateSurface(VkInstance vk_instance,
                                            PlatformWindow window,
