@@ -41,21 +41,19 @@ struct PlatformWindowEvent {
   PlatformWindowEventData data;
 };
 
+typedef void (*PlatformWindowEventCallback)(void* context,
+                                            PlatformWindowEvent event);
+
 // The |event_callback| may be called from an arbitrary thread.
-PlatformWindow PlatformWindowMakeDefaultWindow(const char* title);
+PlatformWindow PlatformWindowMakeDefaultWindow(
+    const char* title, PlatformWindowEventCallback event_handler_func,
+    void* context);
 void PlatformWindowDestroyWindow(PlatformWindow platform_window);
 
 NativeWindow PlatformWindowGetNativeWindow(PlatformWindow platform_window);
 
 void PlatformWindowShow(PlatformWindow platform_window);
 void PlatformWindowHide(PlatformWindow platform_window);
-
-PlatformWindowEvent PlatformWindowWaitForNextEvent(
-    PlatformWindow platform_window);
-
-// Injects a custom message that can be used to wake up the event loop.
-bool PlatformWindowEnqueueCustomEvent(PlatformWindow platform_window,
-                                      PlatformWindowEventDataCustom data);
 
 int32_t PlatformWindowGetWidth(PlatformWindow window);
 int32_t PlatformWindowGetHeight(PlatformWindow window);
