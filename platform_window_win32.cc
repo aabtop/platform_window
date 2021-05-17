@@ -22,10 +22,8 @@ class Window {
   bool error() { return hwnd() == NULL; }
   HWND hwnd() {
     {
-      std::unique_lock<std::mutex> lock(initialized_mutex_);
-      while (!initialized_) {
-        initialized_condition_.wait(lock);
-      }
+      std::unique_lock lock(initialized_mutex_);
+      initialized_condition_.wait(lock, [this] { return initialized_; });
     }
 
     return hwnd_;
@@ -163,7 +161,7 @@ PlatformWindow PlatformWindowMakeDefaultWindow(
     void* context) {
   auto window = std::make_unique<Window>(title, event_handler_func, context);
   if (window->error()) {
-    return NULL;
+    return INVALID_PLATFORM_WINDOW;
   } else {
     return window.release();
   }

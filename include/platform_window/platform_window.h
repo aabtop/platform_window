@@ -10,6 +10,8 @@ extern "C" {
 typedef void* PlatformWindow;
 typedef void* NativeWindow;
 
+const PlatformWindow INVALID_PLATFORM_WINDOW = nullptr;
+
 enum PlatformWindowEventType {
   kPlatformWindowEventTypeNoEvent,
   kPlatformWindowEventTypeQuitRequest,
@@ -17,6 +19,11 @@ enum PlatformWindowEventType {
   kPlatformWindowEventTypeCustom,
 };
 
+struct PlatformWindowEventDataQuitRequest {};
+struct PlatformWindowEventDataResized {
+  int width;
+  int height;
+};
 struct PlatformWindowEventDataCustom {
   // If your payload can fit into an integer, it can make things simpler
   // to just stuff it into this `small_data` field.
@@ -27,12 +34,8 @@ struct PlatformWindowEventDataCustom {
 };
 
 union PlatformWindowEventData {
-  struct {
-  } quit_request;
-  struct {
-    int width;
-    int height;
-  } resized;
+  PlatformWindowEventDataQuitRequest quit_request;
+  PlatformWindowEventDataResized resized;
   PlatformWindowEventDataCustom custom;
 };
 
@@ -48,12 +51,12 @@ typedef void (*PlatformWindowEventCallback)(void* context,
 PlatformWindow PlatformWindowMakeDefaultWindow(
     const char* title, PlatformWindowEventCallback event_handler_func,
     void* context);
-void PlatformWindowDestroyWindow(PlatformWindow platform_window);
+void PlatformWindowDestroyWindow(PlatformWindow window);
 
-NativeWindow PlatformWindowGetNativeWindow(PlatformWindow platform_window);
+NativeWindow PlatformWindowGetNativeWindow(PlatformWindow window);
 
-void PlatformWindowShow(PlatformWindow platform_window);
-void PlatformWindowHide(PlatformWindow platform_window);
+void PlatformWindowShow(PlatformWindow window);
+void PlatformWindowHide(PlatformWindow window);
 
 int32_t PlatformWindowGetWidth(PlatformWindow window);
 int32_t PlatformWindowGetHeight(PlatformWindow window);
