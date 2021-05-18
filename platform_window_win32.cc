@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <windowsx.h>
 
 #include <cassert>
 #include <condition_variable>
@@ -140,13 +141,72 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
   switch (msg) {
     case WM_CLOSE: {
       event_callback_(context_, {kPlatformWindowEventTypeQuitRequest, {}});
-      return 0L;
+      return 0;
     } break;
     case WM_USER: {
-      PlatformWindowEventData data;
+      PlatformWindowEventData data{};
       data.custom = {static_cast<int>(lp), reinterpret_cast<void*>(lp)};
       event_callback_(context_, {kPlatformWindowEventTypeCustom, data});
-      return 0L;
+      return 0;
+    } break;
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP: {
+      PlatformWindowEventData data{};
+      data.mouse_button.button = [msg] {
+        switch (msg) {
+          case WM_LBUTTONDOWN:
+          case WM_LBUTTONUP:
+            return kPlatformWindowMouseLeft;
+          case WM_RBUTTONDOWN:
+          case WM_RBUTTONUP:
+            return kPlatformWindowMouseRight;
+          default:
+            return kPlatformWindowMouseUnknown;
+        };
+      }();
+      data.mouse_button.pressed = [msg] {
+        switch (msg) {
+          case WM_LBUTTONDOWN:
+          case WM_RBUTTONDOWN:
+            return true;
+          case WM_LBUTTONUP:
+          case WM_RBUTTONUP:
+            return false;
+          default:
+            return false;
+        };
+      }();
+      data.mouse_button.x = GET_X_LPARAM(lp);
+      data.mouse_button.y = GET_Y_LPARAM(lp);
+      event_callback_(context_, {kPlatformWindowEventTypeMouseButton, data});
+      if (data.mouse_button.pressed) {
+        SetCapture(hwnd);
+      } else {
+        ReleaseCapture();
+      }
+      return 0;
+    } break;
+    case WM_MOUSEMOVE: {
+      PlatformWindowEventData data{};
+      data.mouse_move.x = GET_X_LPARAM(lp);
+      data.mouse_move.y = GET_Y_LPARAM(lp);
+      event_callback_(context_, {kPlatformWindowEventTypeMouseMove, data});
+      return 0;
+    } break;
+    case WM_MOUSEWHEEL: {
+      PlatformWindowEventData data{};
+      // This is a bit of an arbitrary value chosen as what kind of felt best.
+      constexpr float WHEEL_DELTAS_PER_DEGREE = 10.0f;
+      data.mouse_wheel.angle_in_degrees =
+          static_cast<float>(GET_WHEEL_DELTA_WPARAM(wp)) /
+          WHEEL_DELTAS_PER_DEGREE;
+      event_callback_(context_, {kPlatformWindowEventTypeMouseWheel, data});
+      return 0;
+    } break;
+    case WM_CAPTURECHANGED: {
+      return 0;
     } break;
     default: {
       return DefWindowProc(hwnd, msg, wp, lp);

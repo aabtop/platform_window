@@ -16,14 +16,43 @@ enum PlatformWindowEventType {
   kPlatformWindowEventTypeNoEvent,
   kPlatformWindowEventTypeQuitRequest,
   kPlatformWindowEventTypeResized,
+  kPlatformWindowEventTypeMouseMove,
+  kPlatformWindowEventTypeMouseButton,
+  kPlatformWindowEventTypeMouseWheel,
   kPlatformWindowEventTypeCustom,
 };
 
 struct PlatformWindowEventDataQuitRequest {};
+
 struct PlatformWindowEventDataResized {
-  int width;
-  int height;
+  int32_t width;
+  int32_t height;
 };
+
+struct PlatformWindowEventDataMouseMove {
+  // Specified in absolute positions relative to the top left point of the
+  // window, in units of pixels.
+  int32_t x;
+  int32_t y;
+};
+
+enum PlatformWindowMouseButton {
+  kPlatformWindowMouseLeft,
+  kPlatformWindowMouseRight,
+  kPlatformWindowMouseUnknown,
+  kPlatformWindowMouseCount = kPlatformWindowMouseUnknown,
+};
+struct PlatformWindowEventDataMouseButton {
+  PlatformWindowMouseButton button;
+  bool pressed;
+  int32_t x;
+  int32_t y;
+};
+
+struct PlatformWindowEventDataMouseWheel {
+  float angle_in_degrees;
+};
+
 struct PlatformWindowEventDataCustom {
   // If your payload can fit into an integer, it can make things simpler
   // to just stuff it into this `small_data` field.
@@ -37,6 +66,9 @@ union PlatformWindowEventData {
   PlatformWindowEventDataQuitRequest quit_request;
   PlatformWindowEventDataResized resized;
   PlatformWindowEventDataCustom custom;
+  PlatformWindowEventDataMouseMove mouse_move;
+  PlatformWindowEventDataMouseButton mouse_button;
+  PlatformWindowEventDataMouseWheel mouse_wheel;
 };
 
 struct PlatformWindowEvent {
