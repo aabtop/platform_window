@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <windowsx.h>
 
+#include <algorithm>
+#include <array>
 #include <cassert>
 #include <condition_variable>
 #include <iostream>
@@ -40,6 +42,10 @@ class Window {
 
   long OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
+  bool any_buttons_pressed() const {
+    return std::any_of(is_pressed_.begin(), is_pressed_.end(),
+                       [](bool x) { return x; });
+  }
   bool initialized_ = false;
   PlatformWindowEventCallback event_callback_;
   void* context_;
@@ -49,6 +55,8 @@ class Window {
   std::thread thread_;
 
   HWND hwnd_ = NULL;
+
+  std::array<bool, kPlatformWindowMouseCount> is_pressed_;
 
   friend LRESULT CALLBACK HandleWindowEvent(HWND, UINT, WPARAM, LPARAM);
 };
@@ -73,7 +81,9 @@ Window::Window(const char* title, PlatformWindowEventCallback event_callback,
                void* event_callback_context)
     : event_callback_(event_callback),
       context_(event_callback_context),
-      thread_(&Window::Run, this, title) {}
+      thread_(&Window::Run, this, title) {
+  is_pressed_.fill(false);
+}
 
 Window::~Window() {
   if (!error()) {
@@ -181,10 +191,17 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       data.mouse_button.x = GET_X_LPARAM(lp);
       data.mouse_button.y = GET_Y_LPARAM(lp);
       event_callback_(context_, {kPlatformWindowEventTypeMouseButton, data});
+
+      bool were_buttons_previously_pressed = any_buttons_pressed();
+      is_pressed_[data.mouse_button.button] = data.mouse_button.pressed;
       if (data.mouse_button.pressed) {
-        SetCapture(hwnd);
+        if (!were_buttons_previously_pressed) {
+          SetCapture(hwnd);
+        }
       } else {
-        ReleaseCapture();
+        if (!any_buttons_pressed()) {
+          ReleaseCapture();
+        }
       }
       return 0;
     } break;
@@ -206,6 +223,19 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       return 0;
     } break;
     case WM_CAPTURECHANGED: {
+      for (size_t i = 0; i < kPlatformWindowMouseCount; ++i) {
+        if (is_pressed_[i]) {
+          PlatformWindowEventData data{};
+          data.mouse_button = {static_cast<PlatformWindowMouseButton>(i), false,
+                               GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
+          event_callback_(context_,
+                          {kPlatformWindowEventTypeMouseButton, data});
+          is_pressed_[i] = false;
+        }
+      }
+      // Probably makese sense to somehow propagate this...
+
+      is_pressed_.fill(false);
       return 0;
     } break;
     default: {
