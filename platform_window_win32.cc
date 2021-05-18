@@ -153,12 +153,6 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       event_callback_(context_, {kPlatformWindowEventTypeQuitRequest, {}});
       return 0;
     } break;
-    case WM_USER: {
-      PlatformWindowEventData data{};
-      data.custom = {static_cast<int>(lp), reinterpret_cast<void*>(lp)};
-      event_callback_(context_, {kPlatformWindowEventTypeCustom, data});
-      return 0;
-    } break;
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
     case WM_LBUTTONUP:

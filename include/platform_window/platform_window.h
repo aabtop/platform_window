@@ -19,7 +19,6 @@ enum PlatformWindowEventType {
   kPlatformWindowEventTypeMouseMove,
   kPlatformWindowEventTypeMouseButton,
   kPlatformWindowEventTypeMouseWheel,
-  kPlatformWindowEventTypeCustom,
 };
 
 struct PlatformWindowEventDataQuitRequest {};
@@ -53,19 +52,9 @@ struct PlatformWindowEventDataMouseWheel {
   float angle_in_degrees;
 };
 
-struct PlatformWindowEventDataCustom {
-  // If your payload can fit into an integer, it can make things simpler
-  // to just stuff it into this `small_data` field.
-  int small_data;
-  // Otherwise, the `more_data` field can be used to specify arbitrarily
-  // more information (at the cost of more involved data lifetime management).
-  void* more_data;
-};
-
 union PlatformWindowEventData {
   PlatformWindowEventDataQuitRequest quit_request;
   PlatformWindowEventDataResized resized;
-  PlatformWindowEventDataCustom custom;
   PlatformWindowEventDataMouseMove mouse_move;
   PlatformWindowEventDataMouseButton mouse_button;
   PlatformWindowEventDataMouseWheel mouse_wheel;
