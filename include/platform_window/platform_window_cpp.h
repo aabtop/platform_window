@@ -34,8 +34,7 @@ class Window {
 
   void Show();
   void Hide();
-  int32_t GetWidth();
-  int32_t GetHeight();
+  PlatformWindowSize GetSize();
 
  private:
   Window(std::unique_ptr<EventHandlerFunction> event_handler_function,

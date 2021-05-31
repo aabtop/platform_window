@@ -35,7 +35,6 @@ NativeWindow Window::GetNativeWindow() {
 void Window::Show() { PlatformWindowShow(window_); }
 void Window::Hide() { PlatformWindowHide(window_); }
 
-int32_t Window::GetWidth() { return PlatformWindowGetWidth(window_); }
-int32_t Window::GetHeight() { return PlatformWindowGetWidth(window_); }
+PlatformWindowSize Window::GetSize() { return PlatformWindowGetSize(window_); }
 
 }  // namespace platform_window

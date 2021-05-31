@@ -12,6 +12,11 @@ typedef void* NativeWindow;
 
 const PlatformWindow INVALID_PLATFORM_WINDOW = nullptr;
 
+struct PlatformWindowSize {
+  int32_t width;
+  int32_t height;
+};
+
 enum PlatformWindowEventType {
   kPlatformWindowEventTypeNoEvent,
   kPlatformWindowEventTypeQuitRequest,
@@ -24,8 +29,7 @@ enum PlatformWindowEventType {
 struct PlatformWindowEventDataQuitRequest {};
 
 struct PlatformWindowEventDataResized {
-  int32_t width;
-  int32_t height;
+  PlatformWindowSize size;
 };
 
 struct PlatformWindowEventDataMouseMove {
@@ -79,8 +83,7 @@ NativeWindow PlatformWindowGetNativeWindow(PlatformWindow window);
 void PlatformWindowShow(PlatformWindow window);
 void PlatformWindowHide(PlatformWindow window);
 
-int32_t PlatformWindowGetWidth(PlatformWindow window);
-int32_t PlatformWindowGetHeight(PlatformWindow window);
+PlatformWindowSize PlatformWindowGetSize(PlatformWindow window);
 
 #ifdef __cplusplus
 }

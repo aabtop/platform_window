@@ -13,8 +13,8 @@
 #include "platform_window/platform_window.h"
 
 namespace {
-const int kWindowWidth = 1920;
-const int kWindowHeight = 1080;
+const int kInitialWindowWidth = 1920;
+const int kInitialWindowHeight = 1080;
 
 class Window {
  public:
@@ -24,10 +24,7 @@ class Window {
 
   bool error() { return hwnd() == NULL; }
   HWND hwnd() {
-    {
-      std::unique_lock lock(initialized_mutex_);
-      initialized_condition_.wait(lock, [this] { return initialized_; });
-    }
+    WaitForInitialization();
 
     return hwnd_;
   }
@@ -35,7 +32,13 @@ class Window {
   void Show();
   void Hide();
 
+  PlatformWindowSize GetSize();
+
  private:
+  void WaitForInitialization() {
+    std::unique_lock lock(mutex_);
+    initialized_condition_.wait(lock, [this] { return initialized_; });
+  }
   void Run(const char* title);
   void Start(const char* title);
   void Shutdown();
@@ -49,8 +52,9 @@ class Window {
   bool initialized_ = false;
   PlatformWindowEventCallback event_callback_;
   void* context_;
+  PlatformWindowSize size_;
 
-  std::mutex initialized_mutex_;
+  std::mutex mutex_;
   std::condition_variable initialized_condition_;
   std::thread thread_;
 
@@ -81,11 +85,13 @@ Window::Window(const char* title, PlatformWindowEventCallback event_callback,
                void* event_callback_context)
     : event_callback_(event_callback),
       context_(event_callback_context),
+      size_{kInitialWindowWidth, kInitialWindowHeight},
       thread_(&Window::Run, this, title) {
   is_pressed_.fill(false);
 }
 
 Window::~Window() {
+  std::cerr << "ERROR: " << error() << std::endl;
   if (!error()) {
     PostMessageA(hwnd(), WM_QUIT, 0, 0);
   }
@@ -95,6 +101,11 @@ Window::~Window() {
 
 void Window::Show() { ShowWindow(hwnd_, SW_SHOWDEFAULT); }
 void Window::Hide() { ShowWindow(hwnd_, SW_HIDE); }
+
+PlatformWindowSize Window::GetSize() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return size_;
+}
 
 void Window::Run(const char* title) {
   Start(title);
@@ -134,13 +145,15 @@ void Window::Start(const char* title) {
 
   s_window = this;
 
-  DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+  DWORD style =
+      WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME;
 
+  PlatformWindowSize size = GetSize();
   hwnd_ = CreateWindowEx(0, window_class, title, style, CW_USEDEFAULT,
-                         CW_USEDEFAULT, kWindowWidth, kWindowHeight, 0, 0,
+                         CW_USEDEFAULT, size.width, size.height, 0, 0,
                          GetModuleHandle(0), NULL);
 
-  std::lock_guard<std::mutex> lock(initialized_mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   initialized_ = true;
   initialized_condition_.notify_all();
 }
@@ -151,6 +164,17 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
   switch (msg) {
     case WM_CLOSE: {
       event_callback_(context_, {kPlatformWindowEventTypeQuitRequest, {}});
+      return 0;
+    } break;
+    case WM_SIZE: {
+      PlatformWindowEventData data;
+      data.resized = PlatformWindowEventDataResized{{LOWORD(lp), HIWORD(lp)}};
+
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        size_ = data.resized.size;
+      }
+      event_callback_(context_, {kPlatformWindowEventTypeResized, data});
       return 0;
     } break;
     case WM_LBUTTONDOWN:
@@ -269,6 +293,6 @@ void PlatformWindowHide(PlatformWindow platform_window) {
   static_cast<Window*>(platform_window)->Hide();
 }
 
-int32_t PlatformWindowGetWidth(PlatformWindow window) { return kWindowWidth; }
-
-int32_t PlatformWindowGetHeight(PlatformWindow window) { return kWindowHeight; }
+PlatformWindowSize PlatformWindowGetSize(PlatformWindow platform_window) {
+  return static_cast<Window*>(platform_window)->GetSize();
+}
