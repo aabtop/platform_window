@@ -91,7 +91,6 @@ Window::Window(const char* title, PlatformWindowEventCallback event_callback,
 }
 
 Window::~Window() {
-  std::cerr << "ERROR: " << error() << std::endl;
   if (!error()) {
     PostMessageA(hwnd(), WM_QUIT, 0, 0);
   }
