@@ -1,13 +1,14 @@
-#include "platform_window/platform_window.h"
+#include "platform_window/platform_window_x11.h"
+
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 #include <cassert>
 #include <chrono>
 #include <thread>
 
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <X11/Xutil.h>
-#include "platform_window/platform_window_x11.h"
+#include "platform_window/platform_window.h"
 
 PlatformWindow PlatformWindowMakeDefaultWindow(
     const char* title, PlatformWindowEventCallback event_callback,
@@ -18,7 +19,7 @@ PlatformWindow PlatformWindowMakeDefaultWindow(
 
   Window root_window = DefaultRootWindow(window->display);
 
-  const bool kFullscreen = true;
+  const bool kFullscreen = false;
 
   XWindowAttributes root_window_attributes;
   XGetWindowAttributes(window->display, root_window, &root_window_attributes);
@@ -30,11 +31,10 @@ PlatformWindow PlatformWindowMakeDefaultWindow(
   window_attributes.override_redirect = (kFullscreen ? True : False);
 
   window->window = XCreateWindow(
-      window->display, root_window,
-      0, 0, root_window_attributes.width, root_window_attributes.height, 0,
-      CopyFromParent, InputOutput,
-      CopyFromParent, CWBorderPixel | CWEventMask |
-                      (kFullscreen ? CWOverrideRedirect : 0),
+      window->display, root_window, 0, 0, root_window_attributes.width,
+      root_window_attributes.height, 0, CopyFromParent, InputOutput,
+      CopyFromParent,
+      CWBorderPixel | CWEventMask | (kFullscreen ? CWOverrideRedirect : 0),
       &window_attributes);
 
   // Hide the mouse cursor in fullscreen mode.
@@ -79,14 +79,12 @@ void PlatformWindowShow(PlatformWindow window) {
 
 void PlatformWindowHide(PlatformWindow window) {
   auto platform_window_x11 = static_cast<PlatformWindowX11*>(window);
-  
+
   XUnmapWindow(platform_window_x11->display, platform_window_x11->window);
   XFlush(platform_window_x11->display);
 }
 
 PlatformWindowSize PlatformWindowGetSize(PlatformWindow window) {
-  return {
-      static_cast<PlatformWindowX11*>(window)->attributes.width,
-      static_cast<PlatformWindowX11*>(window)->attributes.height};
+  return {static_cast<PlatformWindowX11*>(window)->attributes.width,
+          static_cast<PlatformWindowX11*>(window)->attributes.height};
 }
-
