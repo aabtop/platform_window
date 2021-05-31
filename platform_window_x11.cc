@@ -7,17 +7,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
-
-namespace {
-
-struct PlatformWindowX11 {
-  Display* display;
-  Window window;
-  Atom delete_message;
-  XWindowAttributes attributes;
-};
-
-}  // namespace
+#include "platform_window/platform_window_x11.h"
 
 PlatformWindow PlatformWindowMakeDefaultWindow(
     const char* title, PlatformWindowEventCallback event_callback,
@@ -65,8 +55,6 @@ PlatformWindow PlatformWindowMakeDefaultWindow(
 
   // make the window visible on the screen
   XStoreName(window->display, window->window, title);
-  XMapWindow(window->display, window->window);
-  XFlush(window->display);
 
   XGetWindowAttributes(window->display, root_window, &window->attributes);
 
@@ -82,10 +70,23 @@ NativeWindow PlatformWindowGetNativeWindow(PlatformWindow platform_window) {
       static_cast<PlatformWindowX11*>(platform_window)->window);
 }
 
-int32_t PlatformWindowGetWidth(PlatformWindow window) {
-  return static_cast<PlatformWindowX11*>(window)->attributes.width;
+void PlatformWindowShow(PlatformWindow window) {
+  auto platform_window_x11 = static_cast<PlatformWindowX11*>(window);
+
+  XMapWindow(platform_window_x11->display, platform_window_x11->window);
+  XFlush(platform_window_x11->display);
 }
 
-int32_t PlatformWindowGetHeight(PlatformWindow window) {
-  return static_cast<PlatformWindowX11*>(window)->attributes.height;
+void PlatformWindowHide(PlatformWindow window) {
+  auto platform_window_x11 = static_cast<PlatformWindowX11*>(window);
+  
+  XUnmapWindow(platform_window_x11->display, platform_window_x11->window);
+  XFlush(platform_window_x11->display);
 }
+
+PlatformWindowSize PlatformWindowGetSize(PlatformWindow window) {
+  return {
+      static_cast<PlatformWindowX11*>(window)->attributes.width,
+      static_cast<PlatformWindowX11*>(window)->attributes.height};
+}
+

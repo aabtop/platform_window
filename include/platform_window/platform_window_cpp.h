@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <optional>
+#include <memory>
 
 #include "platform_window/platform_window.h"
 

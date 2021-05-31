@@ -44,11 +44,17 @@ cc_library(
 
 cc_library(
   name = "platform_window_x11",
+  hdrs = [
+      "include/platform_window/platform_window_x11.h",
+  ],
   srcs = [
     "platform_window_x11.cc",
   ],
-  copts = [
+  linkopts = [
     "-lX11",
+  ],
+  includes = [
+    "include",
   ],
   deps = [
     ":platform_window_headers",
@@ -106,12 +112,13 @@ cc_library(
   srcs = [
     "vulkan_x11.cc",
   ],
-  copts = [
+  linkopts = [
     "-lX11",
   ],
   deps=[
     ":vulkan_headers",
     "@vulkan_sdk//:vulkan",
     ":platform_window",
+    ":platform_window_x11",
   ],
 )
