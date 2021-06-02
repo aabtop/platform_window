@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "platform_window/platform_window_key.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +26,7 @@ enum PlatformWindowEventType {
   kPlatformWindowEventTypeMouseMove,
   kPlatformWindowEventTypeMouseButton,
   kPlatformWindowEventTypeMouseWheel,
+  kPlatformWindowEventTypeKey,
 };
 
 struct PlatformWindowEventDataQuitRequest {};
@@ -56,12 +59,18 @@ struct PlatformWindowEventDataMouseWheel {
   float angle_in_degrees;
 };
 
+struct PlatformWindowEventDataKeyEvent {
+  bool pressed;
+  PlatformWindowKey key;
+};
+
 union PlatformWindowEventData {
   PlatformWindowEventDataQuitRequest quit_request;
   PlatformWindowEventDataResized resized;
   PlatformWindowEventDataMouseMove mouse_move;
   PlatformWindowEventDataMouseButton mouse_button;
   PlatformWindowEventDataMouseWheel mouse_wheel;
+  PlatformWindowEventDataKeyEvent key;
 };
 
 struct PlatformWindowEvent {

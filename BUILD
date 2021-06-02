@@ -15,6 +15,20 @@ cc_library(
   includes = [
     "include",
   ],
+  deps = [
+    ":platform_window_key",
+  ],
+)
+
+cc_library(
+  name = "platform_window_key",
+  hdrs = [
+    "include/platform_window/platform_window_key.h",
+  ],
+  includes = [
+    "include",
+  ],
+  visibility = ["//visibility:public"],
 )
 
 cc_library(
