@@ -44,9 +44,6 @@ cc_library(
 
 cc_library(
   name = "platform_window_x11",
-  hdrs = [
-      "include/platform_window/platform_window_x11.h",
-  ],
   srcs = [
     "platform_window_x11.cc",
   ],

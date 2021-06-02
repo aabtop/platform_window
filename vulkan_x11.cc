@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "platform_window/vulkan.h"
-#include "platform_window/platform_window_x11.h"
 
 namespace {
 const std::vector<const char*>* GetRequiredInstanceExtensions() {
@@ -28,13 +27,11 @@ const char** PlatformWindowVulkanGetRequiredInstanceExtensions() {
 VkResult PlatformWindowVulkanCreateSurface(VkInstance vk_instance,
                                            PlatformWindow window,
                                            VkSurfaceKHR* surface) {
-  PlatformWindowX11* platform_window_x11 =
-      static_cast<PlatformWindowX11*>(window);
-
   VkXlibSurfaceCreateInfoKHR create_info{};
   create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-  create_info.dpy = platform_window_x11->display;
-  create_info.window = platform_window_x11->window;
+  create_info.dpy = XOpenDisplay(NULL);
+  create_info.window =
+      reinterpret_cast<Window>(PlatformWindowGetNativeWindow(window));
 
   return vkCreateXlibSurfaceKHR(vk_instance, &create_info, nullptr, surface);
 }
