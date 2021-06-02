@@ -255,6 +255,14 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       is_pressed_.fill(false);
       return 0;
     } break;
+    case WM_KEYDOWN:
+    case WM_KEYUP: {
+      PlatformWindowEventData data{};
+      data.key.key = static_cast<PlatformWindowKey>(wp);
+      data.key.pressed = (msg == WM_KEYDOWN);
+      event_callback_(context_, {kPlatformWindowEventTypeKey, data});
+      return 0;
+    } break;
     default: {
       return DefWindowProc(hwnd, msg, wp, lp);
     }
