@@ -32,6 +32,8 @@ class Window {
   void Show();
   void Hide();
 
+  void SetTitle(const char* title);
+
   PlatformWindowSize GetSize();
 
  private:
@@ -100,6 +102,8 @@ Window::~Window() {
 
 void Window::Show() { ShowWindow(hwnd_, SW_SHOWDEFAULT); }
 void Window::Hide() { ShowWindow(hwnd_, SW_HIDE); }
+
+void Window::SetTitle(const char* title) { SetWindowTextA(hwnd_, title); }
 
 PlatformWindowSize Window::GetSize() {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -298,6 +302,10 @@ void PlatformWindowShow(PlatformWindow platform_window) {
 
 void PlatformWindowHide(PlatformWindow platform_window) {
   static_cast<Window*>(platform_window)->Hide();
+}
+
+void PlatformWindowSetTitle(PlatformWindow platform_window, const char* title) {
+  static_cast<Window*>(platform_window)->SetTitle(title);
 }
 
 PlatformWindowSize PlatformWindowGetSize(PlatformWindow platform_window) {

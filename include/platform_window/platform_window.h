@@ -89,6 +89,8 @@ void PlatformWindowDestroyWindow(PlatformWindow window);
 
 NativeWindow PlatformWindowGetNativeWindow(PlatformWindow window);
 
+void PlatformWindowSetTitle(PlatformWindow window, const char* title);
+
 void PlatformWindowShow(PlatformWindow window);
 void PlatformWindowHide(PlatformWindow window);
 

@@ -26,6 +26,8 @@ class PlatformWindowX11 {
   void Show();
   void Hide();
 
+  void SetTitle(const char* title);
+
   PlatformWindowSize GetSize() const;
 
  private:
@@ -79,6 +81,13 @@ void PlatformWindowX11::Show() {
 void PlatformWindowX11::Hide() {
   Display* display = XOpenDisplay(NULL);
   XUnmapWindow(display, window_);
+  XFlush(display);
+  XCloseDisplay(display);
+}
+
+void PlatformWindowX11::SetTitle(const char* title) {
+  Display* display = XOpenDisplay(NULL);
+  XStoreName(display, window_, title);
   XFlush(display);
   XCloseDisplay(display);
 }
@@ -233,6 +242,10 @@ void PlatformWindowShow(PlatformWindow window) {
 
 void PlatformWindowHide(PlatformWindow window) {
   static_cast<PlatformWindowX11*>(window)->Hide();
+}
+
+void PlatformWindowSetTitle(PlatformWindow window, const char* title) {
+  static_cast<PlatformWindowX11*>(window)->SetTitle(title);
 }
 
 PlatformWindowSize PlatformWindowGetSize(PlatformWindow window) {
