@@ -180,6 +180,8 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       event_callback_(context_, {kPlatformWindowEventTypeResized, data});
       return 0;
     } break;
+    case WM_LBUTTONDBLCLK:
+    case WM_RBUTTONDBLCLK:
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
     case WM_LBUTTONUP:
@@ -187,9 +189,11 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       PlatformWindowEventData data{};
       data.mouse_button.button = [msg] {
         switch (msg) {
+          case WM_LBUTTONDBLCLK:
           case WM_LBUTTONDOWN:
           case WM_LBUTTONUP:
             return kPlatformWindowMouseLeft;
+          case WM_RBUTTONDBLCLK:
           case WM_RBUTTONDOWN:
           case WM_RBUTTONUP:
             return kPlatformWindowMouseRight;
@@ -199,9 +203,11 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       }();
       data.mouse_button.pressed = [msg] {
         switch (msg) {
+          case WM_LBUTTONDBLCLK:
           case WM_LBUTTONDOWN:
           case WM_RBUTTONDOWN:
             return true;
+          case WM_RBUTTONDBLCLK:
           case WM_LBUTTONUP:
           case WM_RBUTTONUP:
             return false;
