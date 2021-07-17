@@ -146,6 +146,14 @@ void PlatformWindowX11::Run() {
         event_callback_(callback_context_,
                         {kPlatformWindowEventTypeMouseMove, data});
       } break;
+      case ConfigureNotify: {
+        // Handle window resize
+        XConfigureEvent xce = event.xconfigure;
+        PlatformWindowEventData data;
+        data.resized = PlatformWindowEventDataResized{{xce.width, xce.height}};
+        event_callback_(callback_context_,
+                        {kPlatformWindowEventTypeResized, data});
+      } break;
       case ClientMessage: {
         const XClientMessageEvent* client_message =
             reinterpret_cast<const XClientMessageEvent*>(&event);
@@ -155,7 +163,6 @@ void PlatformWindowX11::Run() {
           event_callback_(callback_context_,
                           {kPlatformWindowEventTypeQuitRequest, {}});
         }
-
       } break;
     }
   }
