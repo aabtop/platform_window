@@ -57,6 +57,8 @@ struct PlatformWindowEventDataMouseButton {
 
 struct PlatformWindowEventDataMouseWheel {
   float angle_in_degrees;
+  int32_t x;
+  int32_t y;
 };
 
 struct PlatformWindowEventDataKeyEvent {

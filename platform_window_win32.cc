@@ -246,6 +246,8 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       data.mouse_wheel.angle_in_degrees =
           static_cast<float>(GET_WHEEL_DELTA_WPARAM(wp)) /
           WHEEL_DELTAS_PER_DEGREE;
+      data.mouse_wheel.x = GET_X_LPARAM(lp);
+      data.mouse_wheel.y = GET_Y_LPARAM(lp);
       event_callback_(context_, {kPlatformWindowEventTypeMouseWheel, data});
       return 0;
     } break;

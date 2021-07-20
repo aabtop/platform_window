@@ -114,6 +114,8 @@ void PlatformWindowX11::Run() {
           PlatformWindowEventData data;
           data.mouse_wheel.angle_in_degrees =
               15 * (x_button_event->button == 4 ? 1 : -1);
+          data.mouse_wheel.x = x_button_event->x;
+          data.mouse_wheel.y = x_button_event->y;
           event_callback_(callback_context_,
                           {kPlatformWindowEventTypeMouseWheel, data});
           continue;
