@@ -246,8 +246,15 @@ long Window::OnEvent(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
       data.mouse_wheel.angle_in_degrees =
           static_cast<float>(GET_WHEEL_DELTA_WPARAM(wp)) /
           WHEEL_DELTAS_PER_DEGREE;
-      data.mouse_wheel.x = GET_X_LPARAM(lp);
-      data.mouse_wheel.y = GET_Y_LPARAM(lp);
+      // For some reason the WM_MOUSEWHEEL message returns screen space
+      // coordinates instead of client space, so we convert them here to be
+      // consistent with the other messages.
+      POINT position;
+      position.x = GET_X_LPARAM(lp);
+      position.y = GET_Y_LPARAM(lp);
+      ScreenToClient(hwnd, &position);
+      data.mouse_wheel.x = position.x;
+      data.mouse_wheel.y = position.y;
       event_callback_(context_, {kPlatformWindowEventTypeMouseWheel, data});
       return 0;
     } break;
